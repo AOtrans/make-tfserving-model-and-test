@@ -21,15 +21,16 @@ def letterbox_image(image, size):
     '''resize image with unchanged aspect ratio using padding'''
     ih, iw, _ = image.shape
     w, h = size
+    print type(ih),type(iw),type(w),type(h)
     scale = min(w / iw, h / ih)
+    print scale
     nw = int(iw * scale)
     nh = int(ih * scale)
 
     image = cv2.resize(image, (nw, nh), interpolation=cv2.INTER_CUBIC)
-
     new_image = np.ones((416, 416, 3), dtype=np.int8) * 128
     new_image[(h - nh) // 2:(h - nh) // 2 + nh, (w - nw) // 2:(w - nw) // 2 + nw, :] = image
-
+  
     return new_image
 
 
@@ -64,7 +65,7 @@ class YOLO(object):
 	return [self.boxes, self.scores, self.classes]
 
     def inputs(self):
-	return [self.yolo_model.input,self.input_image_shape]
+	return [self.yolo_model.input,self.input_image_shape,K.learning_phase()]
 
     def _get_class(self):
         classes_path = os.path.expanduser(self.classes_path)
@@ -104,6 +105,7 @@ class YOLO(object):
         image_data = np.array(boxed_image, dtype='float32')
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
+
         with self.graph.as_default():
         	out_boxes, out_scores, out_classes = self.sess.run(
             	[self.boxes, self.scores, self.classes],
