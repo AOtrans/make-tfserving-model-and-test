@@ -45,6 +45,7 @@ class YOLO(object):
         K.set_session(session)
 	#K._LEARNING_PHASE = tf.constant(0)
 	K.set_learning_phase(0)
+
         self.model_path = CONFIG.yolo3_weigths_path
         self.anchors_path = CONFIG.yolo3_anchors_path
         self.classes_path = CONFIG.yolo3_classes_path
