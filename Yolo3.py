@@ -8,14 +8,19 @@ import numpy as np
 from tensorflow.keras import backend as K
 #import tensorflow.keras.backend.tensorflow_backend as KTF
 import tensorflow as tf
-from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Input, Lambda
 from PIL import Image, ImageFont, ImageDraw
 
 from model import yolo_eval, yolo_body
 
 sys.path.append("..")
 import CONFIG
-
+def get_inputs(param):
+    my_input = tf.map_fn(elems=param, fn=tf.image.decode_jpeg, dtype=tf.uint8)
+    my_input = K.reshape(my_input,[-1, 416, 416, 3])
+    my_input = K.cast(my_input, dtype=tf.float32)
+    my_input = tf.divide(my_input, tf.constant(255.0))
+    return my_input
 
 def letterbox_image(image, size):
     '''resize image with unchanged aspect ratio using padding'''
@@ -66,7 +71,7 @@ class YOLO(object):
 	return [self.boxes, self.scores, self.classes]
 
     def inputs(self):
-	return [self.yolo_model.input,self.input_image_shape,K.learning_phase()]
+	return [self.base_input,self.input_image_shape]
 
     def _get_class(self):
         classes_path = os.path.expanduser(self.classes_path)
@@ -90,7 +95,11 @@ class YOLO(object):
         num_anchors = len(self.anchors)
         num_classes = len(self.class_names)
 
-        self.yolo_model = yolo_body(Input(shape=(None, None, 3)), num_anchors // 3, num_classes)
+	my_input = Input(shape=[],dtype=tf.string)
+	self.base_input = my_input
+	my_input = Lambda(get_inputs, output_shape=(416,416,3))(my_input)
+	my_input = Input(tensor=my_input)
+        self.yolo_model = yolo_body(my_input, num_anchors // 3, num_classes)
         self.yolo_model.load_weights(self.model_path)  # make sure model, anchors and classes match
 
         print('Detection model, {} model, {} anchors, and {} classes load success!.'.format(model_path, num_anchors, num_classes))
