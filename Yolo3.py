@@ -15,8 +15,11 @@ from model import yolo_eval, yolo_body
 
 sys.path.append("..")
 import CONFIG
+def decode(param):
+    return tf.image.decode_jpeg(param, channels=3, dct_method='INTEGER_ACCURATE')
+
 def get_inputs(param):
-    my_input = tf.map_fn(elems=param, fn=tf.image.decode_jpeg, dtype=tf.uint8)
+    my_input = tf.map_fn(elems=param, fn=decode, dtype=tf.uint8)
     my_input = K.reshape(my_input,[-1, 416, 416, 3])
     my_input = K.cast(my_input, dtype=tf.float32)
     my_input = tf.divide(my_input, tf.constant(255.0))
